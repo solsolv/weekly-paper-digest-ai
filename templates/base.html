@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ site.title }}{% endblock %}</title>
+<meta name="description" content="{{ site.description }}">
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --panel-2: #1e222b; --text: #e6e8eb;
+    --muted: #9aa3b2; --accent: #6ea8fe; --accent-2: #9d7bff; --border: #2a2f3a;
+    --ai: #6ea8fe; --mech: #57c98f;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f7f8fa; --panel: #ffffff; --panel-2: #f0f2f5; --text: #1b1f27;
+      --muted: #5b6473; --accent: #2f6fd6; --accent-2: #7a4ddb; --border: #e2e6ec;
+      --ai: #2f6fd6; --mech: #1f9d57;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo",
+      "Malgun Gothic", "Noto Sans KR", Roboto, sans-serif; line-height: 1.7;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 32px 20px 64px; }
+  header.site { border-bottom: 1px solid var(--border); margin-bottom: 28px; padding-bottom: 18px; }
+  header.site h1 { margin: 0 0 6px; font-size: 1.5rem; }
+  header.site p { margin: 0; color: var(--muted); font-size: .95rem; }
+  header.site .home-link { font-size: .85rem; color: var(--muted); }
+  .badge {
+    display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .02em;
+    padding: 2px 8px; border-radius: 999px; vertical-align: middle;
+  }
+  .badge.ai { background: color-mix(in srgb, var(--ai) 18%, transparent); color: var(--ai); border: 1px solid color-mix(in srgb, var(--ai) 40%, transparent); }
+  .badge.mech { background: color-mix(in srgb, var(--mech) 18%, transparent); color: var(--mech); border: 1px solid color-mix(in srgb, var(--mech) 40%, transparent); }
+  .week-card {
+    display: block; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px 20px; margin-bottom: 14px;
+  }
+  .week-card:hover { border-color: var(--accent); text-decoration: none; }
+  .week-card h2 { margin: 0 0 8px; font-size: 1.1rem; color: var(--text); }
+  .week-card ul { margin: 8px 0 0; padding-left: 18px; color: var(--muted); font-size: .92rem; }
+  .paper {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+    padding: 22px 24px; margin-bottom: 20px;
+  }
+  .paper.ai { border-left: 4px solid var(--ai); }
+  .paper.mech { border-left: 4px solid var(--mech); }
+  .paper h3 { margin: 6px 0 4px; font-size: 1.18rem; line-height: 1.45; }
+  .paper .meta { color: var(--muted); font-size: .84rem; margin-bottom: 4px; }
+  .paper .authors { color: var(--muted); font-size: .85rem; margin-bottom: 10px; }
+  .paper .summary { white-space: pre-wrap; font-size: .98rem; }
+  .paper .summary ul { padding-left: 20px; margin: 8px 0; }
+  .stats { display: flex; gap: 14px; flex-wrap: wrap; font-size: .82rem; color: var(--muted); margin: 10px 0; }
+  .stats .chip { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 2px 9px; }
+  .tags { margin-top: 10px; }
+  .tag {
+    display: inline-block; font-size: .76rem; color: var(--accent-2);
+    background: color-mix(in srgb, var(--accent-2) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent-2) 32%, transparent);
+    border-radius: 999px; padding: 2px 9px; margin: 0 6px 6px 0;
+  }
+  .links a { margin-right: 14px; font-size: .9rem; }
+  footer.site { margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--border); color: var(--muted); font-size: .82rem; }
+  .toc { margin: 0 0 24px; padding: 14px 18px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px; font-size: .92rem; }
+  .toc strong { display: block; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    {% block header %}
+    <h1><a href="{% block home_href %}index.html{% endblock %}" style="color:inherit">{{ site.title }}</a></h1>
+    <p>{{ site.description }}</p>
+    {% endblock %}
+  </header>
+  {% block content %}{% endblock %}
+  <footer class="site">
+    <p>자동 생성 · {{ now.strftime("%Y-%m-%d %H:%M UTC") }} · arXiv + Semantic Scholar + LLM 요약</p>
+  </footer>
+</div>
+</body>
+</html>

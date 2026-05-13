@@ -1,0 +1,7 @@
+requests>=2.31
+feedparser>=6.0
+PyYAML>=6.0
+Jinja2>=3.1
+anthropic>=0.40
+# 선택: openai_compat provider 사용 시
+# openai>=1.40

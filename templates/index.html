@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+  {% if not weeks %}
+    <p>아직 생성된 다이제스트가 없습니다. 첫 빌드를 기다려 주세요.</p>
+  {% endif %}
+  {% for w in weeks %}
+    {% set ai_n = w.tracks.ai | length %}
+    {% set mech_n = w.tracks.mech | length %}
+    <a class="week-card" href="weeks/{{ w.week_id }}.html">
+      <h2>{{ w.week_id }} 주간 다이제스트
+        <span class="badge ai">AI {{ ai_n }}</span>
+        <span class="badge mech">기계공학 {{ mech_n }}</span>
+      </h2>
+      <ul>
+        {% for p in w.papers %}
+          <li>{{ p.title }}{% if p.citation_count %} <span style="opacity:.7">({{ p.citation_count }} cites)</span>{% endif %}</li>
+        {% endfor %}
+      </ul>
+    </a>
+  {% endfor %}
+{% endblock %}

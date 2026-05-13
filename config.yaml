@@ -1,0 +1,95 @@
+# =============================================================================
+# 주간 논문 다이제스트 설정
+# =============================================================================
+
+site:
+  title: "주간 AI · AI활용 기계공학 논문 다이제스트"
+  description: "매주 월요일, 지난 한 달간 발표된 논문 중 인용수 상위 논문을 한국어로 요약합니다."
+  base_url: ""              # GitHub Pages URL (예: "https://username.github.io/repo"). 비워두면 상대경로 사용.
+  timezone: "Asia/Seoul"
+  language: "ko"
+
+# -----------------------------------------------------------------------------
+# 논문 선정
+# -----------------------------------------------------------------------------
+selection:
+  lookback_days: 30         # "최신" 기준: 최근 N일 이내 발표(또는 갱신)된 논문
+  per_track:
+    ai: 2                   # AI 분야 편수
+    mech: 2                 # AI 활용 기계공학 편수
+  candidate_pool_per_track: 60   # 인용수 조회 대상 후보 수 (트랙별)
+  exclude_already_featured: true # 과거에 소개한 논문은 제외 (data/ 아카이브 기준)
+  min_abstract_chars: 200        # 초록이 너무 짧은 항목 제외
+
+# -----------------------------------------------------------------------------
+# arXiv 수집 쿼리
+#   - categories: arXiv 분류 코드 (https://arxiv.org/category_taxonomy)
+#   - keywords  : 초록/제목에 포함돼야 하는 키워드 (mech 트랙에서 'AI 활용'을 거르기 위함)
+# -----------------------------------------------------------------------------
+arxiv:
+  max_results_per_query: 200
+  tracks:
+    ai:
+      categories: ["cs.AI", "cs.CL", "cs.CV", "cs.LG", "cs.NE", "cs.RO", "stat.ML"]
+      keywords: []          # AI 트랙은 카테고리만으로 충분
+    mech:
+      # AI 활용 기계공학: 유체/구조/제어/최적화 계열 카테고리 ∩ ML 키워드
+      categories: ["physics.flu-dyn", "physics.comp-ph", "cs.CE", "eess.SY", "math.OC", "cond-mat.soft"]
+      keywords:
+        - "machine learning"
+        - "deep learning"
+        - "neural network"
+        - "physics-informed"
+        - "neural operator"
+        - "surrogate model"
+        - "data-driven"
+        - "reinforcement learning"
+        - "generative design"
+        - "topology optimization"
+        - "digital twin"
+
+# -----------------------------------------------------------------------------
+# 관심 세부 주제 (요약·정렬 시 가산점 부여 / 표시용 태그)
+# -----------------------------------------------------------------------------
+interests:
+  ai:
+    - "LLM·생성형·에이전트"
+    - "멀티모달·비전·생성모델"
+    - "학습이론·최적화·경량화"
+    - "강화학습·제어·로보틱스"
+  mech:
+    - "시뮬레이션·CFD·구조해석"
+    - "설계최적화·생성형 설계"
+    - "제어·진단·디지털트윈"
+
+# -----------------------------------------------------------------------------
+# Semantic Scholar (인용수 조회)
+# -----------------------------------------------------------------------------
+semantic_scholar:
+  enabled: true
+  api_key_env: "SEMANTIC_SCHOLAR_API_KEY"   # 선택. 없으면 비인증(낮은 rate limit)으로 동작
+  request_delay_sec: 1.1                     # 비인증 시 rate limit 회피용 지연
+  max_retries: 3
+
+# -----------------------------------------------------------------------------
+# 요약 LLM provider
+#   provider: claude | openai_compat | ollama
+# -----------------------------------------------------------------------------
+llm:
+  provider: "claude"
+  summary_lines: 10          # 한 편당 목표 줄 수
+  max_output_tokens: 1200
+  temperature: 0.3
+
+  claude:
+    model: "claude-sonnet-4-6"
+    api_key_env: "ANTHROPIC_API_KEY"
+
+  openai_compat:             # OpenAI / Together / Groq / vLLM 등 OpenAI 호환 API
+    model: "gpt-4o-mini"
+    base_url: "https://api.openai.com/v1"
+    api_key_env: "OPENAI_API_KEY"
+
+  ollama:                    # 로컬 LLM
+    model: "llama3.1:8b"
+    host: "http://localhost:11434"

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}{{ week.week_id }} 다이제스트 · {{ site.title }}{% endblock %}
+{% block home_href %}../index.html{% endblock %}
+{% block header %}
+  <p class="home-link"><a href="../index.html">← 전체 목록</a></p>
+  <h1>{{ week.week_id }} 주간 논문 다이제스트</h1>
+  <p>{{ site.description }}</p>
+{% endblock %}
+{% block content %}
+  <div class="toc">
+    <strong>이번 주 {{ week.papers | length }}편</strong>
+    {% for p in week.papers %}
+      <span class="badge {{ p.track }}">{{ track_label.get(p.track, p.track) }}</span>
+      <a href="#p-{{ p.arxiv_id }}">{{ p.title }}</a>{% if not loop.last %}<br>{% endif %}
+    {% endfor %}
+  </div>
+
+  {% for track in ['ai', 'mech'] %}
+    {% set papers = week.tracks[track] %}
+    {% if papers %}
+      <h2 style="margin-top:28px"><span class="badge {{ track }}">{{ track_label.get(track, track) }}</span></h2>
+      {% for p in papers %}
+        <article class="paper {{ track }}" id="p-{{ p.arxiv_id }}">
+          <div class="meta">{{ p.categories | join(", ") }} · 발표 {{ p.published | fmt_date }}{% if p.updated and p.updated != p.published %} · 갱신 {{ p.updated | fmt_date }}{% endif %}</div>
+          <h3><a href="{{ p.abs_url }}" target="_blank" rel="noopener">{{ p.title }}</a></h3>
+          <div class="authors">{{ p.authors[:8] | join(", ") }}{% if p.authors | length > 8 %} 외 {{ (p.authors | length) - 8 }}명{% endif %}</div>
+          <div class="stats">
+            {% if p.citation_count is not none %}<span class="chip">인용 {{ p.citation_count }}</span>{% endif %}
+            {% if p.influential_citation_count %}<span class="chip">영향력 인용 {{ p.influential_citation_count }}</span>{% endif %}
+            {% if p.matched_keywords %}<span class="chip">매칭: {{ p.matched_keywords | join(", ") }}</span>{% endif %}
+          </div>
+          <div class="summary">
+            <ul>
+            {% for line in p.summary_ko.split('\n') %}
+              {% set t = line.strip() %}
+              {% if t.startswith('-') %}<li>{{ t[1:].strip() }}</li>{% elif t %}<li>{{ t }}</li>{% endif %}
+            {% endfor %}
+            </ul>
+          </div>
+          {% if p.tldr %}<div class="meta" style="margin-top:8px"><em>TLDR (Semantic Scholar):</em> {{ p.tldr }}</div>{% endif %}
+          {% if p.tags %}<div class="tags">{% for tg in p.tags %}<span class="tag">#{{ tg }}</span>{% endfor %}</div>{% endif %}
+          <div class="links" style="margin-top:10px">
+            <a href="{{ p.abs_url }}" target="_blank" rel="noopener">arXiv</a>
+            <a href="{{ p.pdf_url }}" target="_blank" rel="noopener">PDF</a>
+            {% if p.s2_url %}<a href="{{ p.s2_url }}" target="_blank" rel="noopener">Semantic Scholar</a>{% endif %}
+          </div>
+        </article>
+      {% endfor %}
+    {% endif %}
+  {% endfor %}
+
+  <p style="margin-top:28px;color:var(--muted);font-size:.85rem">
+    선정 기준: 최근 {{ week.lookback_days }}일 이내 arXiv 등록 논문 중 Semantic Scholar 인용수 상위.
+    요약 엔진: {{ week.provider }}.
+  </p>
+{% endblock %}
