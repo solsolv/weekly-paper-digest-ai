@@ -56,9 +56,13 @@ def render_site(cfg: Config) -> None:
     env = _env()
     env.filters["fmt_date"] = _fmt_date
     site = {
-        "title": cfg.get("site.title", "주간 논문 다이제스트"),
+        "title": cfg.get("site.title", "주간 논문 브리핑"),
         "description": cfg.get("site.description", ""),
         "base_url": (cfg.get("site.base_url", "") or "").rstrip("/"),
+        "interests": {
+            "ai": cfg.get("interests.ai", []) or [],
+            "mech": cfg.get("interests.mech", []) or [],
+        },
     }
     weeks = load_all_weeks()
 

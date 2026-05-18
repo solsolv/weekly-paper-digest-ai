@@ -1,19 +1,44 @@
 {% extends "base.html" %}
 {% block content %}
+  {% if site.interests and (site.interests.ai or site.interests.mech) %}
+  <section class="interests reveal" aria-label="관심 주제">
+    <div class="interests-title">관심 주제</div>
+    {% if site.interests.ai %}
+    <div class="interests-row">
+      <span class="badge ai">AI</span>
+      <div class="interests-chips">
+        {% for t in site.interests.ai %}<span class="interest-chip">{{ t }}</span>{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% if site.interests.mech %}
+    <div class="interests-row">
+      <span class="badge mech">AI 활용 기계공학</span>
+      <div class="interests-chips">
+        {% for t in site.interests.mech %}<span class="interest-chip">{{ t }}</span>{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+
   {% if not weeks %}
-    <p>아직 생성된 다이제스트가 없습니다. 첫 빌드를 기다려 주세요.</p>
+    <div class="reveal">
+      <p style="color: var(--text-soft); font-size: 1.05rem;">아직 생성된 브리핑이 없습니다. 첫 빌드를 기다려 주세요.</p>
+    </div>
   {% endif %}
   {% for w in weeks %}
     {% set ai_n = w.tracks.ai | length %}
     {% set mech_n = w.tracks.mech | length %}
-    <a class="week-card" href="weeks/{{ w.week_id }}.html">
-      <h2>{{ w.week_id }} 주간 다이제스트
+    <a class="week-card reveal" href="weeks/{{ w.week_id }}.html" style="transition-delay: {{ loop.index0 * 60 }}ms;">
+      <h2>
+        <span class="week-date">{{ w.week_id }}</span>
         <span class="badge ai">AI {{ ai_n }}</span>
         <span class="badge mech">기계공학 {{ mech_n }}</span>
       </h2>
       <ul>
         {% for p in w.papers %}
-          <li>{{ p.title }}{% if p.citation_count %} <span style="opacity:.7">({{ p.citation_count }} cites)</span>{% endif %}</li>
+          <li>{{ p.title_ko or p.title }}{% if p.citation_count %} <span style="color: var(--text-muted)">· {{ p.citation_count }} cites</span>{% endif %}</li>
         {% endfor %}
       </ul>
     </a>

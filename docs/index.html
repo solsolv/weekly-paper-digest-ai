@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}{{ site.title }}{% endblock %}</title>
-<meta name="description" content="{{ site.description }}">
+<title>주간 AI ｜ AI 활용 기계공학 논문 브리핑</title>
+<meta name="description" content="매주 월요일 · 임팩트와 최신 트렌딩에서 트랙별 2편을 한국어로 요약합니다">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
@@ -431,15 +431,39 @@
 </div>
 <div class="wrap">
   <header class="site">
-    {% block header %}
     <span class="eyebrow">Weekly Briefing</span>
-    <h1><a href="{% block home_href %}index.html{% endblock %}">{{ site.title }}</a></h1>
-    <p class="lede">{{ site.description }}</p>
-    {% endblock %}
+    <h1><a href="index.html">주간 AI ｜ AI 활용 기계공학 논문 브리핑</a></h1>
+    <p class="lede">매주 월요일 · 임팩트와 최신 트렌딩에서 트랙별 2편을 한국어로 요약합니다</p>
   </header>
-  {% block content %}{% endblock %}
+  <section class="interests reveal" aria-label="관심 주제">
+    <div class="interests-title">관심 주제</div>
+    <div class="interests-row">
+      <span class="badge ai">AI</span>
+      <div class="interests-chips">
+<span class="interest-chip">LLM·생성형·에이전트</span><span class="interest-chip">멀티모달·비전·생성모델</span><span class="interest-chip">학습이론·최적화·경량화</span><span class="interest-chip">강화학습·로보틱스</span>      </div>
+    </div>
+    <div class="interests-row">
+      <span class="badge mech">AI 활용 기계공학</span>
+      <div class="interests-chips">
+<span class="interest-chip">시뮬레이션·구조해석</span><span class="interest-chip">설계최적화·생성형 설계</span><span class="interest-chip">진단·디지털트윈</span>      </div>
+    </div>
+  </section>
+
+    <a class="week-card reveal" href="weeks/2026-05-18.html" style="transition-delay: 0ms;">
+      <h2>
+        <span class="week-date">2026-05-18</span>
+        <span class="badge ai">AI 2</span>
+        <span class="badge mech">기계공학 2</span>
+      </h2>
+      <ul>
+          <li>문자열 유사도 계산 및 분류를 위한 통계적 특징 제안 및 연구 <span style="color: var(--text-muted)">· 2 cites</span></li>
+          <li>MinT: 수백만 개의 LLM 훈련 및 서비스를 위한 관리형 인프라</li>
+          <li>실시간 고정밀 위상 최적화를 위한 물리학 기반 트랜스포머 <span style="color: var(--text-muted)">· 1 cites</span></li>
+          <li>메시 기반 그래프 신경망과 물리 인식 어텐션을 이용한 충돌 평가</li>
+      </ul>
+    </a>
   <footer class="site">
-    <p>자동 생성 · {{ now.strftime("%Y-%m-%d %H:%M UTC") }} · arXiv + Semantic Scholar + LLM 요약</p>
+    <p>자동 생성 · 2026-05-18 04:06 UTC · arXiv + Semantic Scholar + LLM 요약</p>
   </footer>
 </div>
 <script>

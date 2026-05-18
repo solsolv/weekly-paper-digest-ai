@@ -28,6 +28,7 @@ def build_provider(cfg: Config) -> LLMProvider:
             model=pcfg.get("model", "gpt-4o-mini"),
             base_url=pcfg.get("base_url", "https://api.openai.com/v1"),
             api_key_env=pcfg.get("api_key_env", "OPENAI_API_KEY"),
+            reasoning_effort=pcfg.get("reasoning_effort"),
             **common,
         )
     if provider_name == "ollama":
@@ -36,6 +37,7 @@ def build_provider(cfg: Config) -> LLMProvider:
         return OllamaProvider(
             model=pcfg.get("model", "llama3.1:8b"),
             host=pcfg.get("host", "http://localhost:11434"),
+            think=bool(pcfg.get("think", False)),
             **common,
         )
     raise ValueError(f"알 수 없는 llm.provider: {provider_name!r} (claude|openai_compat|ollama 중 하나)")

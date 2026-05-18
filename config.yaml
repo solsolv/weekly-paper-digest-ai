@@ -1,25 +1,45 @@
 # =============================================================================
-# 주간 논문 다이제스트 설정
+# 주간 논문 브리핑 설정
 # =============================================================================
 
 site:
-  title: "주간 AI · AI활용 기계공학 논문 다이제스트"
-  description: "매주 월요일, 지난 한 달간 발표된 논문 중 인용수 상위 논문을 한국어로 요약합니다."
+  title: "주간 AI ｜ AI 활용 기계공학 논문 브리핑"
+  description: "매주 월요일 · 임팩트와 최신 트렌딩에서 트랙별 2편을 한국어로 요약합니다"
   base_url: ""              # GitHub Pages URL (예: "https://username.github.io/repo"). 비워두면 상대경로 사용.
   timezone: "Asia/Seoul"
   language: "ko"
 
 # -----------------------------------------------------------------------------
 # 논문 선정
+#   각 트랙은 [임팩트 1편 + 최신 1편] 두 슬롯으로 구성.
+#   - 임팩트 슬롯: 12개월 lookback + (영향력 인용수×3 + 인용수) 상위 1편
+#   - 최신 슬롯  : 14일  lookback + 발표일 최신 1편
+#   - AI 트랙 최신 슬롯은 Hugging Face Papers trending에서 우선 가져옴(실패 시 arXiv fallback).
 # -----------------------------------------------------------------------------
 selection:
-  lookback_days: 30         # "최신" 기준: 최근 N일 이내 발표(또는 갱신)된 논문
-  per_track:
-    ai: 2                   # AI 분야 편수
-    mech: 2                 # AI 활용 기계공학 편수
-  candidate_pool_per_track: 60   # 인용수 조회 대상 후보 수 (트랙별)
-  exclude_already_featured: true # 과거에 소개한 논문은 제외 (data/ 아카이브 기준)
-  min_abstract_chars: 200        # 초록이 너무 짧은 항목 제외
+  exclude_already_featured: true
+  min_abstract_chars: 200
+  candidate_pool_per_track: 150   # 인용수 조회 대상 후보 수 상한 (트랙별)
+
+  slots:
+    impact:
+      lookback_days: 365          # 임팩트 후보 lookback (12개월)
+      score: "influential3plus"   # influential_cc * 3 + citation_cc
+    latest:
+      lookback_days: 14           # 최신 후보 lookback (2주)
+
+  # 트랙별 최신 슬롯 데이터 소스
+  latest_source:
+    ai: "huggingface_weekly"      # AI 최신은 HF Papers trending에서
+    mech: "arxiv"                 # 기계공학 최신은 arXiv 그대로
+
+# -----------------------------------------------------------------------------
+# Hugging Face Papers (AI 최신 슬롯 후보 풀)
+# -----------------------------------------------------------------------------
+huggingface:
+  enabled: true
+  top_n: 10                       # 최근 7일 daily papers를 upvote로 정렬 → 상위 N편을 후보 풀로
+  fallback_to_arxiv: true         # HF 조회 실패/빈 결과 시 arXiv 최근 14일 최신순으로 자동 전환
 
 # -----------------------------------------------------------------------------
 # arXiv 수집 쿼리
@@ -27,14 +47,19 @@ selection:
 #   - keywords  : 초록/제목에 포함돼야 하는 키워드 (mech 트랙에서 'AI 활용'을 거르기 위함)
 # -----------------------------------------------------------------------------
 arxiv:
-  max_results_per_query: 200
+  max_results_per_query: 400      # 임팩트 후보 풀 확보용 (이전 200 → 400)
   tracks:
     ai:
       categories: ["cs.AI", "cs.CL", "cs.CV", "cs.LG", "cs.NE", "cs.RO", "stat.ML"]
-      keywords: []          # AI 트랙은 카테고리만으로 충분
+      keywords: []                # AI 트랙은 카테고리만으로 충분
     mech:
-      # AI 활용 기계공학: 유체/구조/제어/최적화 계열 카테고리 ∩ ML 키워드
-      categories: ["physics.flu-dyn", "physics.comp-ph", "cs.CE", "eess.SY", "math.OC", "cond-mat.soft"]
+      # AI 활용 기계공학: 카테고리 ∩ (ML 키워드) ∩ (도메인 키워드)
+      # - keywords (OR): ML/데이터 기반 방법론 — 1개 이상 매칭 필요
+      # - keywords_domain (OR): 기계공학 응용 도메인 — 1개 이상 매칭 필요
+      # 두 그룹 모두 통과해야 후보로 채택 (AND). 순수 수학·일반 ML 알고리즘 논문을 거름.
+      # 유체(physics.flu-dyn) 카테고리는 현 시점 제외 — 추후 별도 유체 트랙으로 분리 예정.
+      # cs.LG, math.NA는 ML/수학 이론 노이즈가 커서 제외 (PINN cross-list 누락 위험은 S2 보강이 흡수).
+      categories: ["physics.comp-ph", "physics.class-ph", "cs.CE", "physics.app-ph", "physics.data-an"]
       keywords:
         - "machine learning"
         - "deep learning"
@@ -44,9 +69,43 @@ arxiv:
         - "surrogate model"
         - "data-driven"
         - "reinforcement learning"
-        - "generative design"
+        - "generative model"
+      keywords_domain:
+        # 단일어 위주 — 후보 풀을 넉넉히 뽑고, 최종 선정은 LLM 적합도 게이트가 결정.
+        # 유체(fluid/turbul/aerodynam/CFD) 키워드는 유체 트랙 분리 시까지 제외.
+        # 구조해석·고체역학
+        - "structural"
+        - "finite element"
+        - "vibrat"
+        - "elastic"
+        - "deform"
+        - "stress"
+        - "multiphysics"
+        # 피로해석·파괴역학
+        - "fatigue"
+        - "fracture"
+        - "crack"
+        # 설계최적화·생성형 설계·위상최적화
         - "topology optimization"
+        - "shape optimization"
+        - "design optimization"
+        - "generative design"
+        # 예측진단(PHM)·디지털트윈
+        - "PHM"
+        - "prognostic"
+        - "diagnostic"
+        - "anomaly detection"
+        - "condition monitoring"
+        - "fault detection"
+        - "predictive maintenance"
+        - "remaining useful life"
         - "digital twin"
+        # 로보틱스·기계 일반
+        - "robot"
+        - "manipulator"
+        - "mechanical"
+        - "aerospace"
+        - "automotive"
 
 # -----------------------------------------------------------------------------
 # 관심 세부 주제 (요약·정렬 시 가산점 부여 / 표시용 태그)
@@ -56,14 +115,85 @@ interests:
     - "LLM·생성형·에이전트"
     - "멀티모달·비전·생성모델"
     - "학습이론·최적화·경량화"
-    - "강화학습·제어·로보틱스"
+    - "강화학습·로보틱스"
   mech:
-    - "시뮬레이션·CFD·구조해석"
+    - "시뮬레이션·구조해석"
     - "설계최적화·생성형 설계"
-    - "제어·진단·디지털트윈"
+    - "진단·디지털트윈"
 
 # -----------------------------------------------------------------------------
-# Semantic Scholar (인용수 조회)
+# LLM 적합도 게이트 — 슬롯별 상위 후보의 abstract를 LLM이 0~1 점수로 평가하고
+# 임계값 이상만 통과시켜 사용자 선호 주제에 맞는 1편을 선정.
+# 키워드는 후보 풀을 광범위하게 잡고, 최종 선별은 이 게이트가 담당.
+# -----------------------------------------------------------------------------
+relevance_gate:
+  enabled: true
+  apply_to_tracks: ["mech"]       # 우선 mech 트랙만. 결과 보고 ai로 확장.
+  top_k: 20                       # 정렬된 후보 상위 N편을 LLM 평가 (한 호출 안에서 평가량만 증가, 호출 횟수는 동일)
+  threshold: 0.7                  # 점수 ≥ 임계값만 통과 (엄격 게이트, 기존 0.5 → 0.7)
+  # 카테고리 사전 필터는 미사용 — 수집 단계 categories 화이트리스트가 이미 분야를 좁힘.
+  # LLM 게이트가 abstract 기반으로 최종 판단.
+  required_categories: []
+  # 게이트 모두 탈락 시 동작:
+  #   "fallback_top1": 원본 상위 1편을 강제 채택 (빈 슬롯 방지)
+  #   "skip":          슬롯을 비움
+  empty_pool_behavior: "fallback_top1"
+  description: |
+    당신은 "AI 활용 기계공학" 논문 큐레이터입니다.
+    abstract에서 다루는 **물리적 응용 도메인**이 사용자의 핵심 관심 영역(아래)에 부합하는지
+    엄격히 판단합니다. 표면적 키워드(surrogate, neural operator 등)에 의존하지 마세요.
+
+    [필수 조건 — 하나라도 미충족 시 0.2 이하로 평가]
+    - abstract가 다루는 응용 대상이 구체적 물리 시스템임을 명시해야 함:
+      고체/구조역학·진동·동역학, 열전달, 피로·파괴, 다물리, 회전기계·베어링 등.
+    - 단순히 "surrogate model"·"neural operator"·"PINN" 용어가 등장해도,
+      적용된 구체적 물리 시스템(어떤 구조/기계 부품)이 명시되지 않으면 ML 이론으로 간주.
+    - ML 아키텍처·최적화 알고리즘·수학 이론 자체 연구(예: ICNN/SOCP/LP 일반화,
+      함수 근사·수렴성·표현력 증명)는 응용 사례가 부수적으로 언급되어도 0.2 이하.
+
+    [핵심 영역 — 점수 0.7~1.0]
+    - 시뮬레이션·구조해석 (구체적 구조/기계 시스템에 PINN·neural operator·surrogate 적용)
+    - 설계최적화·생성형 설계·위상최적화 (구체적 부품·구조 형상 대상)
+    - 예측진단(PHM)·디지털트윈 (회전기·베어링·기계장치 fault diagnosis, prognostics, RUL)
+      ※ 사용자 우선순위 반영: 핵심 영역으로 인정하되, 동일한 부합도일 때
+        다른 핵심 영역 대비 약 0.05~0.10 낮게 평가 (예: 다른 핵심이 0.90이면 PHM은 0.80~0.85).
+    - 피로해석 (fatigue life/damage prediction)
+    - 파괴역학 (fracture, crack propagation simulation)
+    - 산업용 로봇·매니퓰레이션 (응용 중심, 제어기 자체 학습은 제외)
+
+    [인접 영역 — 점수 0.3~0.6]
+    - 위 영역에 인접하나 핵심이 아닌 일반 ML 알고리즘 응용
+    - 응용 도메인은 명시되어 있으나 사용자 핵심 관심에서 비껴난 경우
+
+    [제외 분야 — 점수 0.0~0.2]
+    - ML 아키텍처·최적화 알고리즘·수학 이론 자체 (응용은 부수적)
+    - 유체역학·CFD·난류·공력 (별도 트랙으로 추후 분리 예정 — 현재 사이클에서는 제외)
+    - 재료 합성·화학·적층제조·제조공정 자체
+    - 제어(controller, MPC, model predictive control, feedback control, control system)
+    - 상태 추정·관측기·시스템 식별(observer, state estimation, system identification, KKL)
+    - 강화학습으로 제어기를 학습하는 경우의 제어 자체
+    - 전력 시스템·계통 안정성 분석(power system, grid stability, data center power)
+    - 순수 수학 최적화·알고리즘 이론·함수 근사 이론
+
+# -----------------------------------------------------------------------------
+# Semantic Scholar Search — 후보 풀 보강 소스 (arxiv에 없는 저널·컨퍼런스 mech 논문 흡수)
+#   /paper/search/bulk 엔드포인트로 키워드 + 분야 필터링하여 추가 후보 수집.
+#   arxiv 후보와 통합 후 DOI/arxiv_id/제목 기준으로 dedupe.
+# -----------------------------------------------------------------------------
+s2_search:
+  enabled: true
+  apply_to_tracks: ["mech"]       # mech만 보강 (AI는 arxiv+HF로 충분)
+  # 쿼리: 공백 = AND, | = OR, +필수, -금지. abstract+title 매칭.
+  # mech 트랙: ML 방법론 × 응용 도메인 광범위 매칭. fields_of_study가 분야 좁힘.
+  query: "(machine learning | deep learning | neural network | physics-informed | neural operator | surrogate) (structural | vibration | fatigue | fracture | topology | digital twin | prognostic | bearing | robot | mechanical)"
+  fields_of_study: ["Engineering", "Physics", "Computer Science", "Materials Science"]
+  limit: 100                      # 한 번에 가져올 최대 편수
+  min_year_offset_days: 365       # lookback 기준일. 호출 측 lookback과 동기화도 가능
+  sort_impact: "citationCount:desc"
+  sort_latest: "publicationDate:desc"
+
+# -----------------------------------------------------------------------------
+# Semantic Scholar (인용수 + 저자 소속 기관 조회)
 # -----------------------------------------------------------------------------
 semantic_scholar:
   enabled: true
@@ -76,20 +206,27 @@ semantic_scholar:
 #   provider: claude | openai_compat | ollama
 # -----------------------------------------------------------------------------
 llm:
-  provider: "claude"
-  summary_lines: 10          # 한 편당 목표 줄 수
+  provider: "openai_compat"   # 무료 Gemini API (OpenAI 호환 엔드포인트) 사용
+  summary_lines: 5            # 한 편당 목표 줄 수
   max_output_tokens: 1200
   temperature: 0.3
+  tags_per_paper: 4           # 편당 추출할 한국어 키워드 수
 
   claude:
     model: "claude-sonnet-4-6"
     api_key_env: "ANTHROPIC_API_KEY"
 
-  openai_compat:             # OpenAI / Together / Groq / vLLM 등 OpenAI 호환 API
-    model: "gpt-4o-mini"
-    base_url: "https://api.openai.com/v1"
-    api_key_env: "OPENAI_API_KEY"
+  openai_compat:              # OpenAI 호환 엔드포인트 — Gemini / OpenAI / Together / Groq / vLLM 등
+    # Google AI Studio 무료 등급. 키 발급: https://aistudio.google.com/
+    # 무료 한도: gemini-2.5-flash = 분당 10 / 일 250 / 분당 25만 토큰 (주 4건 사용에 충분)
+    model: "gemini-2.5-flash"
+    base_url: "https://generativelanguage.googleapis.com/v1beta/openai/"
+    api_key_env: "GEMINI_API_KEY"
+    # Gemini 2.5는 reasoning 모델 — thinking 토큰이 응답을 잡아먹지 않도록 비활성화
+    # 값: "none" | "low" | "medium" | "high" (Gemini OpenAI 호환 엔드포인트가 표준 지원)
+    reasoning_effort: "none"
 
-  ollama:                    # 로컬 LLM
-    model: "llama3.1:8b"
-    host: "http://localhost:11434"
+  ollama:                     # 로컬/사내 LLM. host는 사내망에서만 접근 가능 — GitHub Actions 클라우드 러너에서는 도달 불가
+    model: "qwen3.5:9b-q8_0"            # 서버 'Qwen3_5-9B:Q8_server94'
+    host: "http://10.32.168.94:11434"
+    think: false                         # Qwen3 등 추론 모델의 thinking 모드 끄기 (요약 태스크 안정성)

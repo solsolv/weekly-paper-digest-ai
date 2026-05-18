@@ -14,10 +14,12 @@ class OpenAICompatProvider(LLMProvider):
         model: str,
         base_url: str = "https://api.openai.com/v1",
         api_key_env: str = "OPENAI_API_KEY",
+        reasoning_effort: str | None = None,
         **kw,
     ):
         super().__init__(model=model, **kw)
         api_key = env(api_key_env) or "not-needed"  # 로컬 서버는 키가 필요 없을 수 있음
+        self.reasoning_effort = reasoning_effort
         try:
             from openai import OpenAI  # noqa: PLC0415
         except ImportError as exc:  # pragma: no cover
@@ -25,13 +27,16 @@ class OpenAICompatProvider(LLMProvider):
         self._client = OpenAI(api_key=api_key, base_url=base_url)
 
     def generate(self, system: str, prompt: str) -> str:
-        resp = self._client.chat.completions.create(
-            model=self.model,
-            temperature=self.temperature,
-            max_tokens=self.max_tokens,
-            messages=[
+        kwargs: dict = {
+            "model": self.model,
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
+            "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": prompt},
             ],
-        )
+        }
+        if self.reasoning_effort:
+            kwargs["extra_body"] = {"reasoning_effort": self.reasoning_effort}
+        resp = self._client.chat.completions.create(**kwargs)
         return (resp.choices[0].message.content or "").strip()

@@ -1,8 +1,7 @@
-"""후보 풀에서 트랙별 최종 논문 선정 (인용수 상위 + 관심사 가산점)."""
+"""슬롯별 선정 — 임팩트 1편(영향력 인용수 가중) + 최신 1편(발표일)."""
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 from .collect import Paper
 from .config import DATA_DIR, Config
@@ -24,30 +23,56 @@ def load_featured_ids() -> set[str]:
     return ids
 
 
-def _score(paper: Paper) -> tuple:
-    """정렬 키: (인용수, 영향력 인용수, 최신성). 클수록 우선."""
+def impact_score(paper: Paper) -> tuple:
+    """임팩트 정렬 키: influential_cc * 3 + citation_cc, tiebreak: 발표일."""
+    icc = paper.influential_citation_count or 0
     cc = paper.citation_count or 0
-    ic = paper.influential_citation_count or 0
-    recency = paper.published.timestamp()
-    return (cc, ic, recency)
+    return (icc * 3 + cc, icc, cc, paper.published.timestamp())
 
 
-def select_for_track(
+def latest_score(paper: Paper) -> tuple:
+    """최신 정렬 키: 발표일(최신 우선), tiebreak: HF upvote(있으면)."""
+    return (paper.published.timestamp(), paper.hf_upvotes or 0)
+
+
+# 모듈 내부 사용 alias (구버전 호환)
+_impact_score = impact_score
+_latest_score = latest_score
+
+
+def select_impact(
     cfg: Config,
-    track: str,
     candidates: list[Paper],
     featured_ids: set[str],
-) -> list[Paper]:
-    n = int(cfg.get(f"selection.per_track.{track}", 2))
+    exclude_ids: set[str] | None = None,
+) -> Paper | None:
     exclude = bool(cfg.get("selection.exclude_already_featured", True))
+    skip = (exclude_ids or set())
+    pool = [
+        p for p in candidates
+        if not (exclude and p.arxiv_id in featured_ids) and p.arxiv_id not in skip
+    ]
+    pool.sort(key=_impact_score, reverse=True)
+    return pool[0] if pool else None
 
-    pool = [p for p in candidates if not (exclude and p.arxiv_id in featured_ids)]
-    pool.sort(key=_score, reverse=True)
-    return pool[:n]
+
+def select_latest(
+    cfg: Config,
+    candidates: list[Paper],
+    featured_ids: set[str],
+    exclude_ids: set[str] | None = None,
+) -> Paper | None:
+    exclude = bool(cfg.get("selection.exclude_already_featured", True))
+    skip = (exclude_ids or set())
+    pool = [
+        p for p in candidates
+        if not (exclude and p.arxiv_id in featured_ids) and p.arxiv_id not in skip
+    ]
+    pool.sort(key=_latest_score, reverse=True)
+    return pool[0] if pool else None
 
 
-def trim_candidate_pool(cfg: Config, track: str, candidates: list[Paper]) -> list[Paper]:
+def trim_candidate_pool(cfg: Config, candidates: list[Paper]) -> list[Paper]:
     """인용수 조회 비용을 줄이기 위해, 최신순 상위 N개만 후보로 남긴다."""
-    limit = int(cfg.get("selection.candidate_pool_per_track", 60))
-    # candidates는 collect 단계에서 submittedDate 내림차순으로 들어옴
+    limit = int(cfg.get("selection.candidate_pool_per_track", 150))
     return candidates[:limit]
